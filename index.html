@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ambient AI Orb</title>
+<title>Ambient AI Voice Companion</title>
 
 <style>
 body {
@@ -32,7 +32,7 @@ body {
     box-shadow:0 10px 30px rgba(0,0,0,0.15);
 }
 
-.orb {
+.sphere {
     width:120px;
     height:120px;
     margin:0 auto 15px;
@@ -72,7 +72,7 @@ button:disabled {opacity:0.6;}
 
 <div class="box">
 
-    <div class="orb"></div>
+    <div class="sphere"></div>
 
     <h2>Ambient AI Companion</h2>
     <p id="context"></p>
@@ -89,7 +89,7 @@ button:disabled {opacity:0.6;}
 const aiBox = document.getElementById("ai");
 const contextBox = document.getElementById("context");
 
-// ---------------- TIME ----------------
+// TIME
 const hour = new Date().getHours();
 let timeContext = "day";
 
@@ -99,7 +99,7 @@ else if(hour >= 20){
     document.body.classList.add("dark");
 }
 
-// ---------------- LOCATION ----------------
+// LOCATION
 let locationText = "unknown";
 
 navigator.geolocation.getCurrentPosition(
@@ -110,14 +110,14 @@ navigator.geolocation.getCurrentPosition(
 ()=> contextBox.innerText = "location blocked"
 );
 
-// ---------------- SPEECH ----------------
+// SPEECH
 function speak(text){
     const u = new SpeechSynthesisUtterance(text);
     u.lang = "en-US";
     window.speechSynthesis.speak(u);
 }
 
-// ---------------- GEMINI ----------------
+// AI CALL (SAFE VERSION)
 async function askAI(userText){
 
     aiBox.innerText = "Thinking...";
@@ -131,25 +131,34 @@ Location: ${locationText}
 User: ${userText}
 `;
 
-    const res = await fetch("/api/gemini", {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ prompt })
-    });
+    try {
 
-    const data = await res.json();
+        const res = await fetch("/api/gemini", {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({ prompt })
+        });
 
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        const data = await res.json();
 
-    aiBox.innerText = text || "No response";
+        const text =
+            data?.candidates?.[0]?.content?.parts?.[0]?.text
+            || data?.error?.message
+            || "No response";
 
-    if(text) speak(text);
+        aiBox.innerText = text;
+
+        if(text) speak(text);
+
+    } catch(err){
+        aiBox.innerText = "Connection error";
+    }
 }
 
-// ---------------- BUTTON ----------------
+// BUTTON
 document.getElementById("talk").onclick = () => askAI("Hello");
 
-// ---------------- MIC ----------------
+// MIC
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 if(SpeechRecognition){
