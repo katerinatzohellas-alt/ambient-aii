@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ambient AI Voice Companion</title>
+<title>Ambient AI Orb</title>
 
 <style>
 body {
@@ -32,7 +32,7 @@ body {
     box-shadow:0 10px 30px rgba(0,0,0,0.15);
 }
 
-.sphere {
+.orb {
     width:120px;
     height:120px;
     margin:0 auto 15px;
@@ -64,33 +64,33 @@ button {
     color:white;
     cursor:pointer;
 }
-
-button:disabled { opacity:0.6; }
+button:disabled {opacity:0.6;}
 </style>
 </head>
 
 <body>
 
 <div class="box">
-    <div class="sphere"></div>
 
-    <h2>Ambient AI Voice</h2>
+    <div class="orb"></div>
+
+    <h2>Ambient AI Companion</h2>
     <p id="context"></p>
 
-    <div id="ai">Press mic and speak</div>
+    <div id="ai">Press button or speak</div>
 
+    <button id="talk">💬 Talk</button>
     <button id="mic">🎤 Speak</button>
+
 </div>
 
 <script>
 
 const aiBox = document.getElementById("ai");
 const contextBox = document.getElementById("context");
-const micBtn = document.getElementById("mic");
 
 // ---------------- TIME ----------------
 const hour = new Date().getHours();
-
 let timeContext = "day";
 
 if(hour < 12) timeContext = "morning";
@@ -104,109 +104,70 @@ let locationText = "unknown";
 
 navigator.geolocation.getCurrentPosition(
 (pos)=>{
-    locationText =
-    `Lat ${pos.coords.latitude.toFixed(2)}, Lon ${pos.coords.longitude.toFixed(2)}`;
+    locationText = `Lat ${pos.coords.latitude.toFixed(2)}, Lon ${pos.coords.longitude.toFixed(2)}`;
     contextBox.innerText = locationText;
 },
-()=>{
-    contextBox.innerText = "location blocked";
-});
+()=> contextBox.innerText = "location blocked"
+);
 
-// ---------------- SPEECH OUTPUT ----------------
+// ---------------- SPEECH ----------------
 function speak(text){
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = "en-US";
-    utter.rate = 1;
-    window.speechSynthesis.speak(utter);
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "en-US";
+    window.speechSynthesis.speak(u);
 }
 
-// ---------------- GEMINI CALL (FIXED) ----------------
-async function askGemini(userText){
+// ---------------- GEMINI ----------------
+async function askAI(userText){
 
     aiBox.innerText = "Thinking...";
 
     const prompt = `
-You are a calm ambient AI assistant.
-Reply in ONE short friendly sentence.
+You are a calm digital companion.
+Reply in ONE short sentence.
 
-User said: ${userText}
 Time: ${timeContext}
 Location: ${locationText}
+User: ${userText}
 `;
 
-    try {
+    const res = await fetch("/api/gemini", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ prompt })
+    });
 
-        const res = await fetch(
-            "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=AIzaSyBO0taiXjGh598yYM7w3vm5ja-dA6WF3IY",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    contents: [
-                        {
-                            role: "user",
-                            parts: [{ text: prompt }]
-                        }
-                    ]
-                })
-            }
-        );
+    const data = await res.json();
 
-        const data = await res.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
-        console.log("API RESPONSE:", data);
+    aiBox.innerText = text || "No response";
 
-        if(!res.ok){
-            aiBox.innerText = data?.error?.message || "API error";
-            return;
-        }
-
-        const text =
-            data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-        if(!text){
-            aiBox.innerText = "No response";
-            return;
-        }
-
-        aiBox.innerText = text;
-        speak(text);
-
-    } catch(err){
-        console.error(err);
-        aiBox.innerText = "Network error";
-    }
+    if(text) speak(text);
 }
 
-// ---------------- VOICE INPUT ----------------
-const SpeechRecognition =
-    window.SpeechRecognition || window.webkitSpeechRecognition;
+// ---------------- BUTTON ----------------
+document.getElementById("talk").onclick = () => askAI("Hello");
 
-if(!SpeechRecognition){
-    micBtn.disabled = true;
-    micBtn.innerText = "Voice not supported";
-}
-else {
+// ---------------- MIC ----------------
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = "en-US";
-    recognition.interimResults = false;
+if(SpeechRecognition){
 
-    micBtn.onclick = () => {
+    const rec = new SpeechRecognition();
+    rec.lang = "en-US";
+
+    document.getElementById("mic").onclick = () => {
         aiBox.innerText = "Listening...";
-        recognition.start();
+        rec.start();
     };
 
-    recognition.onresult = (e) => {
-        const text = e.results[0][0].transcript;
-        askGemini(text);
+    rec.onresult = (e) => {
+        askAI(e.results[0][0].transcript);
     };
 
-    recognition.onerror = (e) => {
-        aiBox.innerText = "Mic error: " + e.error;
-    };
+} else {
+    document.getElementById("mic").disabled = true;
 }
 
 </script>
