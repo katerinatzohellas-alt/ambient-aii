@@ -64,6 +64,7 @@ button {
     color:white;
     cursor:pointer;
 }
+
 button:disabled { opacity:0.6; }
 </style>
 </head>
@@ -85,9 +86,11 @@ button:disabled { opacity:0.6; }
 
 const aiBox = document.getElementById("ai");
 const contextBox = document.getElementById("context");
+const micBtn = document.getElementById("mic");
 
 // ---------------- TIME ----------------
 const hour = new Date().getHours();
+
 let timeContext = "day";
 
 if(hour < 12) timeContext = "morning";
@@ -101,15 +104,15 @@ let locationText = "unknown";
 
 navigator.geolocation.getCurrentPosition(
 (pos)=>{
-    locationText = `Lat ${pos.coords.latitude.toFixed(2)}, Lon ${pos.coords.longitude.toFixed(2)}`;
+    locationText =
+    `Lat ${pos.coords.latitude.toFixed(2)}, Lon ${pos.coords.longitude.toFixed(2)}`;
     contextBox.innerText = locationText;
 },
 ()=>{
     contextBox.innerText = "location blocked";
-}
-);
+});
 
-// ---------------- SPEECH OUT ----------------
+// ---------------- SPEECH OUTPUT ----------------
 function speak(text){
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = "en-US";
@@ -117,7 +120,7 @@ function speak(text){
     window.speechSynthesis.speak(utter);
 }
 
-// ---------------- GEMINI CALL ----------------
+// ---------------- GEMINI CALL (FIXED) ----------------
 async function askGemini(userText){
 
     aiBox.innerText = "Thinking...";
@@ -134,29 +137,34 @@ Location: ${locationText}
     try {
 
         const res = await fetch(
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AQ.Ab8RN6KySiHzhGf6UpaerV2tmiL-BWobR9QcjZAjLgIw-wvMQA",
+            "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=AQ.Ab8RN6KDe9RCCQMC9yVk94b08nTOGkTrb4Zvvrp3vJ93v_y5sQ",
             {
                 method: "POST",
-                headers: {"Content-Type":"application/json"},
+                headers: {
+                    "Content-Type": "application/json"
+                },
                 body: JSON.stringify({
-                    contents: [{
-                        role: "user",
-                        parts: [{ text: prompt }]
-                    }]
+                    contents: [
+                        {
+                            role: "user",
+                            parts: [{ text: prompt }]
+                        }
+                    ]
                 })
             }
         );
 
         const data = await res.json();
 
-        console.log(data);
+        console.log("API RESPONSE:", data);
 
         if(!res.ok){
             aiBox.innerText = data?.error?.message || "API error";
             return;
         }
 
-        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        const text =
+            data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
         if(!text){
             aiBox.innerText = "No response";
@@ -173,14 +181,14 @@ Location: ${locationText}
 }
 
 // ---------------- VOICE INPUT ----------------
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-const micBtn = document.getElementById("mic");
+const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
 
 if(!SpeechRecognition){
     micBtn.disabled = true;
     micBtn.innerText = "Voice not supported";
-} else {
+}
+else {
 
     const recognition = new SpeechRecognition();
     recognition.lang = "en-US";
