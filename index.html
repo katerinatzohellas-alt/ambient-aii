@@ -84,7 +84,6 @@ button {
     <h2>Ambient AI Companion</h2>
     <p id="context"></p>
 
-    <!-- ΝΕΟ INPUT -->
     <input id="userInput" placeholder="Write something..." />
     <button id="send">Send</button>
 
@@ -118,7 +117,7 @@ navigator.geolocation.getCurrentPosition(
 ()=> contextBox.innerText = "location blocked"
 );
 
-// AI CALL (ΔΕΝ ΤΟ ΠΕΙΡΑΖΟΥΜΕ)
+// AI CALL
 async function askAI(userText){
 
     aiBox.innerText = "Thinking...";
@@ -149,12 +148,21 @@ User: ${userText}
 
         aiBox.innerText = text;
 
+        // 🔊 TEXT TO SPEECH
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = "en-US"; // άλλαξε σε "el-GR" αν θες ελληνικά
+        utterance.rate = 1;
+        utterance.pitch = 1;
+
+        speechSynthesis.cancel(); // σταματάει προηγούμενη ομιλία
+        speechSynthesis.speak(utterance);
+
     } catch(err){
         aiBox.innerText = "Connection error";
     }
 }
 
-// BUTTON (ΝΕΟ)
+// BUTTON
 document.getElementById("send").onclick = () => {
     const input = document.getElementById("userInput").value;
     if(input) askAI(input);
