@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ambient AI Voice Companion</title>
+<title>Ambient AI Companion</title>
 
 <style>
 body {
@@ -54,6 +54,14 @@ body {
     min-height:40px;
 }
 
+input {
+    width:100%;
+    padding:10px;
+    border-radius:8px;
+    border:none;
+    margin-top:10px;
+}
+
 button {
     width:100%;
     margin-top:10px;
@@ -64,7 +72,6 @@ button {
     color:white;
     cursor:pointer;
 }
-button:disabled {opacity:0.6;}
 </style>
 </head>
 
@@ -77,10 +84,11 @@ button:disabled {opacity:0.6;}
     <h2>Ambient AI Companion</h2>
     <p id="context"></p>
 
-    <div id="ai">Press button or speak</div>
+    <!-- ΝΕΟ INPUT -->
+    <input id="userInput" placeholder="Write something..." />
+    <button id="send">Send</button>
 
-    <button id="talk">💬 Talk</button>
-    <button id="mic">🎤 Speak</button>
+    <div id="ai">Write and press send</div>
 
 </div>
 
@@ -110,14 +118,7 @@ navigator.geolocation.getCurrentPosition(
 ()=> contextBox.innerText = "location blocked"
 );
 
-// SPEECH
-function speak(text){
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = "en-US";
-    window.speechSynthesis.speak(u);
-}
-
-// AI CALL (SAFE VERSION)
+// AI CALL (ΔΕΝ ΤΟ ΠΕΙΡΑΖΟΥΜΕ)
 async function askAI(userText){
 
     aiBox.innerText = "Thinking...";
@@ -148,36 +149,16 @@ User: ${userText}
 
         aiBox.innerText = text;
 
-        if(text) speak(text);
-
     } catch(err){
         aiBox.innerText = "Connection error";
     }
 }
 
-// BUTTON
-document.getElementById("talk").onclick = () => askAI("Hello");
-
-// MIC
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-if(SpeechRecognition){
-
-    const rec = new SpeechRecognition();
-    rec.lang = "en-US";
-
-    document.getElementById("mic").onclick = () => {
-        aiBox.innerText = "Listening...";
-        rec.start();
-    };
-
-    rec.onresult = (e) => {
-        askAI(e.results[0][0].transcript);
-    };
-
-} else {
-    document.getElementById("mic").disabled = true;
-}
+// BUTTON (ΝΕΟ)
+document.getElementById("send").onclick = () => {
+    const input = document.getElementById("userInput").value;
+    if(input) askAI(input);
+};
 
 </script>
 
